@@ -1,0 +1,60 @@
+dist: trusty
+language: php
+php:
+  - 7.0.24
+services:
+  - mysql
+sudo: required
+env:
+  global:
+    - REPOSITORY=https://github.com/bartoszherba/magento2-module-travis-sample.git
+    - MODULE_NAME=bartoszherba/magento2-module-travis-sample
+    - MODULE_SLUG=BartoszHerba/ModuleTravisSample
+    - MAGE_ROOT=../magento2    
+    - MAGE_MODE=developer
+    - MAGE_VER=latest
+    - DB=magento2
+    - DB_TEST=magento2_test
+    - DB_USER=magento2
+    - DB_PASSWORD=password123
+    - DB_HOST=localhost
+    - DISABLE_XDEBUG=false
+  matrix:
+  - MAGE_VER=2.1.7 TEST_SUITE=phpunit
+  - MAGE_VER=2.1.8 TEST_SUITE=phpunit
+  - MAGE_VER=2.1.9 TEST_SUITE=phpunit
+  - MAGE_VER=2.1.7 TEST_SUITE=integration
+  - MAGE_VER=2.1.8 TEST_SUITE=integration
+  - MAGE_VER=2.1.9 TEST_SUITE=integration
+matrix:
+  include:
+  - php: 7.0.24
+    env: TEST_SUITE=js MAGE_VER=2.1.9 DISABLE_XDEBUG=true
+  - php: 7.0.24
+    env: TEST_SUITE=static MAGE_VER=2.1.9 DISABLE_XDEBUG=true
+  allow_failures:
+    - env: MAGE_VER=2.2.0
+before_install:
+  - sh -c "if [ $DISABLE_XDEBUG = true ]; then echo '' > ~/.phpenv/versions/$(phpenv version-name)/etc/conf.d/xdebug.ini; fi"
+  - composer config --global http-basic.repo.magento.com "$MAGENTO_USERNAME" "$MAGENTO_PASSWORD"
+  - sh -c "if [ ! -e composer.json ]; then composer init -n; fi"
+install:
+  - sh -c "if [ '$TEST_SUITE' = 'js' ]; then ./Travis/tasks/deps/install-node.sh; fi"
+  - sh -c "if [ '$TEST_SUITE' = 'js' ]; then ./Travis/tasks/deps/install-grunt-cli.sh; fi"
+  - sh -c "if [ '$TEST_SUITE' = 'static' ]; then composer require magento/framework:~100.1.0 && composer install; fi"
+  - sh -c "if [ '$TEST_SUITE' = 'static' ]; then ./Travis/tasks/deps/install-phpcs.sh; fi"
+  - sh -c "if [ '$TEST_SUITE' = 'static' ]; then ./Travis/tasks/deps/install-phpmd.sh; fi"
+  - sh -c "if [ '$TEST_SUITE' = 'static' ]; then ./Travis/tasks/deps/install-phpcpd.sh; fi"
+before_script:
+  - sh -c "if [ '$TEST_SUITE' = 'js' ]; then ./Travis/bootstrap/jasmine-tests-bootstrap.sh; fi"
+  - sh -c "if [ '$TEST_SUITE' = 'phpunit' ]; then ./Travis/bootstrap/phpunit-tests-bootstrap.sh; fi"
+  - sh -c "if [ '$TEST_SUITE' = 'integration' ]; then ./Travis/bootstrap/integration-tests-bootstrap.sh; fi"
+script:
+  - sh -c "if [ '$TEST_SUITE' = 'js' ]; then ./Travis/run-jasmine-tests.sh; fi"
+  - sh -c "if [ '$TEST_SUITE' = 'phpunit' ]; then ./Travis/run-phpunit-tests.sh; fi"
+  - sh -c "if [ '$TEST_SUITE' = 'integration' ]; then ./Travis/run-integration-tests.sh; fi"
+  - sh -c "if [ '$TEST_SUITE' = 'static' ]; then ./Travis/run-static-tests.sh; fi"
+
+cache:
+  directories:
+    - $HOME/.composer/cache/files
