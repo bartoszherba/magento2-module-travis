@@ -6,8 +6,7 @@
          bootstrap="./framework/bootstrap.php"
         >
     <testsuite name="Unit Tests">
-        <directory suffix="Test.php">../../../app/code/*/*/Test/Unit</directory>
-        <exclude>../../../app/code/Magento</exclude>
+        <directory suffix="Test.php">../../../app/code/BartoszHerba/ModuleTravisSample/Test/Unit</directory>
     </testsuite>
     <php>
         <ini name="date.timezone" value="America/Los_Angeles"/>
